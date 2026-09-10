@@ -1,0 +1,29 @@
+apiVersion: "policy.sdd-mottadev.org/v1"
+kind: "AuthorizationPolicy"
+metadata:
+  id: "urn:sdd:policy:authz-default"
+  version: "1.0.0"
+spec:
+  roles:
+    planner:
+      permitted_capabilities: ["L0"]
+      resource_rules:
+        - action: "ALLOW"
+          patterns: ["sdd://*/changes/**", "sdd://*/specs/**"]
+    implementer:
+      permitted_capabilities: ["L0", "L1", "L2"]
+      resource_rules:
+        - action: "ALLOW"
+          patterns: ["src/**", "tests/**", "docs/**"]
+        - action: "DENY"
+          patterns: [".sdd/policies/**", ".git/**", "infra/prod/**"]
+    security_evaluator:
+      permitted_capabilities: ["L0", "L2"]
+      resource_rules:
+        - action: "ALLOW"
+          patterns: ["**"]
+    release_operator:
+      permitted_capabilities: ["L0", "L1", "L2", "L3"]
+      resource_rules:
+        - action: "ALLOW"
+          patterns: ["**"]

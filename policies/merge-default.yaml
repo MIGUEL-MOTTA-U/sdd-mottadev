@@ -1,0 +1,9 @@
+apiVersion: "policy.sdd-mottadev.org/v1"
+kind: "MergePolicy"
+metadata:
+  id: "urn:sdd:policy:merge-default"
+  version: "1.0.0"
+spec:
+  strategy: "STRICT_LINEAR_REBASE" # "STRICT_LINEAR_REBASE" | "FAST_FORWARD_ONLY"
+  re_evaluation_required: true      # Re-ejecuta compuertas sobre el estado integrado simulado
+  conflict_resolution: "ESCALATE_TO_BLOCKED"

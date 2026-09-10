@@ -1,0 +1,13 @@
+# SDD Runtime & Secrets isolation
+.sdd/workspaces/
+.sdd/tokens/
+.sdd/STATE.md.lock
+
+# Operating System & Editor Files
+.DS_Store
+Thumbs.db
+*.swp
+*.bak
+*~
+.vscode/
+.idea/

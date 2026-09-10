@@ -43,49 +43,9 @@ Project (Raíz del Dominio)
 
 ---
 
-## 2. Mapa Estructural del Repositorio
+## 2. Modelo de Identidad, Capacidades y Seguridad
 
-El repositorio está organizado en módulos formales de especificación, esquemas de validación, políticas canónicas y ejemplos:
-
-```text
-.
-├── LICENSE                                # Licencia de código abierto MIT
-├── README.md                              # Documento maestro y portal arquitectónico
-├── .gitignore                             # Aislamiento de secretos, tokens y workspaces efímeros
-│
-├── docs/                                  # Especificaciones formales del plano de control
-│   ├── SPEC-ARCHITECTURE.md               # Especificación completa de arquitectura y metamodelo
-│   ├── SPEC-INTERFACES.md                 # Contratos de frontera: Agent API (MCP/CLI) y Evaluator Contract
-│   ├── SPEC-MANIFEST.md                   # Especificación técnica del manifiesto sdd.manifest.yaml
-│   ├── SPEC-RESEARCH-PROTOCOL.md          # Protocolo de investigación profunda desacoplada
-│   ├── SPEC-CONCURRENCY-MERGE.md          # Contrato de reconciliación concurrente y MergeEvaluator
-│   ├── SPEC-FILESYSTEM-ADAPTER.md         # Mapeo físico del directorio .sdd/ y CAS
-│   ├── SPEC-BOOTSTRAP.md                  # Secuencia sdd init y regla de certificación Day-Zero
-│   └── TRACEABILITY_LOG.md                # Registro inmutable de decisiones arquitectónicas (ADR Log)
-│
-├── schemas/                               # Esquemas JSON (Draft-07) para validación determinista
-│   └── v1/
-│       ├── manifest.json                  # Schema formal para sdd.manifest.yaml
-│       ├── research-query.json            # Schema de entrada para Research Protocol
-│       ├── research-payload.json          # Schema de salida compacto (<500 tokens)
-│       ├── authz-policy.json              # Schema para AuthorizationPolicy
-│       └── integration-request.json       # Schema para IntegrationRequest
-│
-├── policies/                              # Paquete Canónico de Políticas (Policy Pack)
-│   ├── authz-default.yaml                 # Matriz de roles y capacidades (L0 a L3)
-│   ├── risk-default.yaml                  # Factores cuantitativos y umbrales de riesgo
-│   ├── orphan-default.yaml                # Detección de heartbeats caídos y recuperación
-│   └── merge-default.yaml                 # Estrategia de rebase estricto y re-evaluación
-│
-└── examples/                              # Plantillas y configuraciones de referencia
-    └── sdd.manifest.yaml                  # Manifiesto completo de ejemplo con pipelines y evaluadores
-```
-
----
-
-## 3. Modelo de Identidad, Capacidades y Seguridad
-
-### 3.1 Identidad de Actores (`Actor`)
+### 2.1 Identidad de Actores (`Actor`)
 
 Cualquier entidad que interactúe con el framework (humano, agente autónomo, pipeline o script) es un `Actor` abstracto:
 
@@ -93,7 +53,7 @@ Cualquier entidad que interactúe con el framework (humano, agente autónomo, pi
 * `public_key`: Clave criptográfica para firma de artefactos, evidencias y tokens.
 * `role`: Rol de ejecución asignado (`planner`, `implementer`, `evaluator`, `auditor`, `operator`).
 
-### 3.2 Niveles de Capacidad (*Privilege Levels*)
+### 2.2 Niveles de Capacidad (*Privilege Levels*)
 
 Las capacidades definen el alcance operativo del comando o herramienta, desvinculadas de la criticidad del entorno:
 
@@ -102,7 +62,7 @@ Las capacidades definen el alcance operativo del comando o herramienta, desvincu
 * **L2 (Sandbox Execution):** Ejecución de procesos efímeros (compilación, linters, suites de pruebas) dentro de entornos confinados, sin acceso a redes externas ni persistencia fuera del workspace.
 * **L3 (Privileged / External Mutation):** Alteración de infraestructura, despliegues, operaciones destructivas sobre datos o invocación de servicios externos sensibles.
 
-### 3.3 Cálculo de Riesgo Contextual
+### 2.3 Cálculo de Riesgo Contextual
 
 El riesgo es una propiedad emergente calculada por el runtime antes de autorizar cualquier operación:
 
@@ -110,7 +70,7 @@ $$\text{RiskScore} = f(\text{Capability}, \text{ResourceImpact}, \text{Environme
 
 * Si $\text{RiskScore} \ge \text{RiskThreshold}$: La operación no puede ejecutarse de manera desatendida y exige un `ApprovalToken`.
 
-### 3.4 Token de Aprobación Criptográfica (`ApprovalToken`)
+### 2.4 Token de Aprobación Criptográfica (`ApprovalToken`)
 
 Autorización atómica, de un solo uso y vinculada a un contexto exacto para operaciones L3:
 
@@ -129,7 +89,7 @@ ApprovalToken {
 }
 ```
 
-### 3.5 Protocolo de Excepción Crítica (*Break-Glass*)
+### 2.5 Protocolo de Excepción Crítica (*Break-Glass*)
 
 Mecanismo para omitir compuertas inmutables ante incidentes de producción o recuperación de desastres:
 
@@ -140,21 +100,21 @@ Mecanismo para omitir compuertas inmutables ante incidentes de producción o rec
 
 ---
 
-## 4. Sistema de Políticas y Evaluación de Compuertas (*Gates*)
+## 3. Sistema de Políticas y Evaluación de Compuertas (*Gates*)
 
-### 4.1 `Policy` como Entidad de Primer Orden
+### 3.1 `Policy` como Entidad de Primer Orden
 
 Las políticas son artefactos inmutables, versionables y evaluables que configuran el comportamiento del plano de control:
 
 * **`GatePolicy`:** Reglas de paso, condiciones de prueba y tolerancias por fase.
-* **`AuthorizationPolicy`:** Asignación entre roles de `Actor`, niveles de capacidad (L0–L3) y recursos ([`policies/authz-default.yaml`](policies/authz-default.yaml)).
-* **`RiskPolicy`:** Matrices de criticidad y umbrales para requerir `ApprovalToken` ([`policies/risk-default.yaml`](policies/risk-default.yaml)).
-* **`OrphanPolicy`:** Estrategias de recuperación ante expiración de leases de agentes ([`policies/orphan-default.yaml`](policies/orphan-default.yaml)).
-* **`MergePolicy`:** Criterios de integración concurrente al tronco principal ([`policies/merge-default.yaml`](policies/merge-default.yaml)).
+* **`AuthorizationPolicy`:** Asignación entre roles de `Actor`, niveles de capacidad (L0–L3) y recursos.
+* **`RiskPolicy`:** Matrices de criticidad y umbrales para requerir `ApprovalToken`.
+* **`OrphanPolicy`:** Estrategias de recuperación ante expiración de leases de agentes.
+* **`MergePolicy`:** Criterios de integración concurrente al tronco principal.
 
 Toda modificación a una política requiere tramitarse formalmente a través de un `ChangeRequest`.
 
-### 4.2 Semántica de Evaluación de Gates
+### 3.2 Semántica de Evaluación de Gates
 
 Un Gate es una función booleana pura ejecutada sobre las evidencias generadas:
 
@@ -164,7 +124,7 @@ $$\text{GateResult} \in \{\text{PASS}, \text{FAIL}, \text{ERROR}\}$$
 * **`FAIL`:** Una o más aserciones evaluadas son falsas (vulnerabilidad detectada, prueba unitaria fallida, contrato roto).
 * **`ERROR`:** Falla de infraestructura en el evaluador (timeout, script caído, servicio inaccesible). **Bajo ninguna circunstancia un `ERROR` equivale a un `PASS`**; la transición se detiene en estado de falla operacional.
 
-### 4.3 Aceptación Formal de Riesgo (`RiskAcceptance`)
+### 3.3 Aceptación Formal de Riesgo (`RiskAcceptance`)
 
 El framework rechaza los estados de "Pass condicional". Si una compuerta genera `FAIL`, la transición solo puede desbloquearse mediante una entidad formal `RiskAcceptance`:
 
@@ -181,13 +141,13 @@ RiskAcceptance {
 }
 ```
 
-### 4.4 Separación entre Productor y Evaluador (*Separation of Concerns*)
+### 3.4 Separación entre Productor y Evaluador (*Separation of Concerns*)
 
 **Invariante Axiomático:** El actor (`Actor`) que genera un artefacto (`Producer`) tiene prohibido actuar como evaluador (`Evaluator`) del mismo en compuertas catalogadas como `strict` o `immutable`. La evaluación debe ser ejecutada por herramientas deterministas o por un actor independiente con rol de auditoría.
 
 ---
 
-## 5. Ciclo de Vida Dual-Track y Fases del Framework
+## 4. Ciclo de Vida Dual-Track y Fases del Framework
 
 El sistema desacopla la preparación del entorno de la materialización de software mediante dos vías interconectadas:
 
@@ -200,7 +160,7 @@ Specs Config ──> Planning Config ──> Configuration ──> Config Testin
 Discovery ──> Specs ──> Planning ──> Design ──> Testing ──> Implementing ──> Security [GATE INMUTABLE] ──> Deploying ──> Monitoring
 ```
 
-### 5.1 Contrato Estándar de Fase (*Phase Contract*)
+### 4.1 Contrato Estándar de Fase (*Phase Contract*)
 
 Toda fase (canónica o personalizada) se rige por la interfaz:
 
@@ -222,7 +182,7 @@ PhaseContract {
 }
 ```
 
-### 5.2 Fases del Track de Configuración (Infraestructura, Herramientas y Accesos)
+### 4.2 Fases del Track de Configuración (Infraestructura, Herramientas y Accesos)
 
 1. **Specs Configuration:** Especificación de dependencias, variables, APIs, interfaces MCP, roles y permisos requeridos.
 2. **Planning Configuration:** Plan para aprovisionar el MVP de configuración operativa (health checks basales, logging, autenticación mínima).
@@ -230,9 +190,9 @@ PhaseContract {
 4. **Config Testing:** Validación funcional de conectores, variables de entorno, pipelines y aislamiento de red.
 5. **Config Security Analysis [COMPUERTA INMUTABLE]:** Auditoría estricta de superficies de ataque, permisos IAM, detección de secretos y análisis de CVEs en dependencias base.
 
-### 5.3 Fases del Track de Delivery (Construcción de Solución)
+### 4.3 Fases del Track de Delivery (Construcción de Solución)
 
-1. **Discovery:** Investigación de viabilidad técnica, benchmarking, evaluación de dependencias y modelos de amenaza preliminares (gobernado por el [Research Protocol](docs/SPEC-RESEARCH-PROTOCOL.md)).
+1. **Discovery:** Investigación de viabilidad técnica, benchmarking, evaluación de dependencias y modelos de amenaza preliminares.
 2. **Specs:** Formalización de requerimientos funcionales, no funcionales y criterios de aceptación.
 3. **Planning:** Desglose del alcance en unidades de trabajo atómicas (`Task`), mitigando ambigüedades.
 4. **Design:** Definición de arquitectura, diagramas de interacción, contratos de interfaz, resiliencia y modelo de datos.
@@ -244,9 +204,9 @@ PhaseContract {
 
 ---
 
-## 6. Máquina de Estados de Tarea y Concurrencia
+## 5. Máquina de Estados de Tarea y Concurrencia
 
-### 6.1 Estados Formales de la Tarea (`TaskState`)
+### 5.1 Estados Formales de la Tarea (`TaskState`)
 
 ```
        ┌──────────────┐
@@ -290,7 +250,7 @@ PhaseContract {
 * **`BLOCKED`:** Ejecución suspendida en espera de una acción externa (emisión de `ApprovalToken`, resolución de dependencia o arbitraje humano).
 * **`CANCELLED`:** Estado terminal forzado por el operador o por revocación de la tarea padre.
 
-### 6.2 Protocolo de Arriendo (*Lease*) y Recuperación de Huérfanos
+### 5.2 Protocolo de Arriendo (*Lease*) y Recuperación de Huérfanos
 
 1. **Adquisición:** Un `Actor` reclama una tarea pasando su estado a `ACTIVE` fijando un $\text{LeaseTTL}$.
 2. **Mantenimiento:** El actor debe emitir señales periódicas de `Heartbeat`.
@@ -307,18 +267,20 @@ $$
 * Se extrae el árbol de diferencias (*diff*) como `Evidence` de auditoría.
 * Según la `OrphanPolicy`: se realiza un `ROLLBACK` atómico liberando la tarea a `UNASSIGNED`, o se escala a `BLOCKED` para arbitraje manual.
 
-### 6.3 Reconciliación Concurrente e Integración
+### 5.3 Reconciliación Concurrente e Integración
 
-Detallado en [SPEC-CONCURRENCY-MERGE.md](docs/SPEC-CONCURRENCY-MERGE.md):
-* **Aislamiento:** Cada tarea en estado `ACTIVE` opera en un espacio de trabajo desacoplado.
-* **`IntegrationRequest`:** Solicitud formal emitida al completar una tarea para fusionar los cambios al tronco común ([`schemas/v1/integration-request.json`](schemas/v1/integration-request.json)).
-* **`MergeEvaluator`:** Validador determinista que simula la integración en un sandbox efímero y re-ejecuta compuertas sobre el artefacto unificado antes del commit en `main`.
+* **Aislamiento:** Cada tarea en estado `ACTIVE` opera en un espacio de trabajo desacoplado (rama git efímera o contenedor aislado).
+* **`IntegrationRequest`:** Solicitud formal emitida al completar una tarea para fusionar los cambios al tronco común.
+* **`MergeEvaluator`:** Validador que simula la integración en un entorno efímero y re-ejecuta las compuertas sobre el artefacto unificado.
+* **`MergePolicy`:**
+  * *Linear Strict:* Exige que la rama esté rebasada sobre el último commit del tronco antes de evaluar compuertas.
+  * *Arbitrated:* En caso de conflicto semántico o de contenido, transiciona a `BLOCKED` requiriendo resolución humana.
 
 ---
 
-## 7. Modelo de Artefactos, Evidencia y Linaje
+## 6. Modelo de Artefactos, Evidencia y Linaje
 
-### 7.1 Separación de Identidad de Artefactos
+### 6.1 Separación de Identidad de Artefactos
 
 Para evitar colisiones entre la función de un archivo y su estado temporal, todo artefacto implementa doble identidad:
 
@@ -336,12 +298,13 @@ ArtifactReference {
 }
 ```
 
-### 7.2 Evidencia Probatoria Inmutable (`Evidence`)
+### 6.2 Evidencia Probatoria Inmutable (`Evidence`)
 
 La evidencia es un registro inmutable generado por un `Evaluator` que demuestra objetivamente el cumplimiento o incumplimiento de una regla o compuerta:
 
 * La evidencia **nunca** es creada por el productor del código.
 * Es de naturaleza estrictamente *append-only*.
+* Estructura:
 
 ```
 EvidenceRecord {
@@ -359,34 +322,38 @@ EvidenceRecord {
 
 ---
 
-## 8. Protocolo de Contexto y Abstracción de Almacenamiento
+## 7. Protocolo de Contexto y Abstracción de Almacenamiento
 
-### 8.1 Esquema Abstracto de Direccionamiento
+### 7.1 Esquema Abstracto de Direccionamiento
 
 El núcleo del framework es independiente de sistemas de archivos locales, APIs en la nube o bases de datos relacionales. Toda entidad se referencia mediante el protocolo abstracto `sdd://`:
 
 $$\text{sdd://}\langle \text{project-id} \rangle / \langle \text{domain} \rangle / \langle \text{entity-type} \rangle / \langle \text{entity-id} \rangle$$
 
-### 8.2 Capa de Adaptadores de Almacenamiento (*Storage Adapters*)
+### 7.2 Capa de Adaptadores de Almacenamiento (*Storage Adapters*)
 
-| Adaptador | Dominio de Uso | Mecanismo de Persistencia | Referencia |
-| :--- | :--- | :--- | :--- |
-| **Filesystem Adapter** | Desarrollo local y agentes CLI | Mapeo determinista en directorio `.sdd/` y CAS | [SPEC-FILESYSTEM-ADAPTER.md](docs/SPEC-FILESYSTEM-ADAPTER.md) |
-| **Git Object Adapter** | Trazabilidad distribuida | Artefactos y evidencias como blobs y tags de Git | Core Git Protocol |
-| **Blob Storage Adapter** | CI/CD y nubes públicas | Persistencia inmutable en buckets S3/GCS compatibles | Cloud Storage API |
+El runtime materializa el protocolo abstracto a través de adaptadores especializados según el entorno de ejecución:
 
-### 8.3 Divulgación Progresiva de Contexto (*Progressive Disclosure*)
+| Adaptador | Dominio de Uso | Mecanismo de Persistencia |
+| --- | --- | --- |
+| **Filesystem Adapter** | Desarrollo local y agentes CLI | Mapeo determinista en directorio `.sdd/` del repositorio. |
+| **Git Object Adapter** | Trazabilidad distribuida | Almacenamiento de artefactos y evidencias como blobs y tags de Git. |
+| **Blob Storage Adapter** | CI/CD y nubes públicas | Persistencia inmutable en buckets S3/GCS compatibles. |
 
-1. **Filtro de Entrada:** Un actor solo recibe los esquemas y contratos de las fases activas y los `ArtifactReference` listados como `required_inputs`.
-2. **Aislamiento de Investigación:** Gobernado por el [Research Protocol](docs/SPEC-RESEARCH-PROTOCOL.md), devolviendo exclusivamente payloads menores a 500 tokens.
-3. **Inyección Dinámica de Políticas:** Las políticas se suministran bajo demanda únicamente cuando la tarea activa interactúa con el recurso o capacidad correspondiente.
+### 7.3 Divulgación Progresiva de Contexto (*Progressive Disclosure*)
+
+Para evitar la degradación del razonamiento de modelos y agentes por saturación de contexto:
+
+1. **Filtro de Entrada:** Un actor solo recibe los esquemas y contratos de las fases activas y los `ArtifactReference` listados como `required_inputs` en el `PhaseContract`.
+2. **Aislamiento de Documentación Pesada:** Las investigaciones extensas, logs de compilación masivos o volcados de datos permanecen en el subsistema de almacenamiento. Al actor únicamente se le inyectan payloads de resumen estructurado (`Summary`, `EvidenceList`, `ConfidenceScore`).
+3. **Inyección Dinámica de Políticas:** Las políticas se suministran bajo demanda únicamente cuando la tarea activa entra en contacto con el recurso o capacidad correspondiente.
 
 ---
 
-## 9. Verificación de Integridad y Trazabilidad
+## 8. Verificación de Integridad y Trazabilidad
 
 Todo cambio aplicado al sistema debe verificar la cadena de custodia completa:
 
 $$\text{Project} \longleftarrow \text{ChangeRequest} \longleftarrow \text{Task} \longleftarrow \text{Execution} \longleftarrow \text{Evidence} \Longrightarrow \text{Artifact}$$
 
-El registro inmutable de decisiones técnicas y descartes arquitectónicos se conserva en el [ADR Log](docs/TRACEABILITY_LOG.md) (ADR-001 al ADR-009).
+El estado global del proyecto en cualquier instante de tiempo $T$ es matemáticamente reproducible a partir del historial secuencial de evidencias selladas, firmas criptográficas y árboles de dependencias de artefactos, garantizando auditabilidad absoluta e independencia frente al ejecutor subyacente.

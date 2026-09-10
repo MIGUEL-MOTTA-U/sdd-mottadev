@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sdd-mottadev.org/schemas/v1/integration-request.json",
+  "title": "IntegrationRequest",
+  "type": "object",
+  "properties": {
+    "request_id": { "type": "string", "format": "uuid" },
+    "task_id": { "type": "string", "pattern": "^PLAN-[0-9]{3,4}$" },
+    "change_id": { "type": "string", "pattern": "^CR-[0-9]{3,4}$" },
+    "source_ref": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["git_branch", "git_commit", "patch_ref"] },
+        "value": { "type": "string" }
+      },
+      "required": ["type", "value"]
+    },
+    "target_base_hash": {
+      "type": "string",
+      "description": "Hash SHA-256 o Git SHA del commit de main sobre el que se basó la tarea"
+    },
+    "modified_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "logical_id": { "type": "string" },
+          "content_hash": { "type": "string" }
+        },
+        "required": ["logical_id", "content_hash"]
+      },
+      "minItems": 1
+    },
+    "actor_signature": { "type": "string" }
+  },
+  "required": ["request_id", "task_id", "change_id", "source_ref", "target_base_hash", "modified_artifacts", "actor_signature"],
+  "additionalProperties": false
+}

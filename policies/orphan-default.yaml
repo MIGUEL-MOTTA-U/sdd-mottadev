@@ -1,0 +1,13 @@
+apiVersion: "policy.sdd-mottadev.org/v1"
+kind: "OrphanPolicy"
+metadata:
+  id: "urn:sdd:policy:orphan-default"
+  version: "1.0.0"
+spec:
+  detection:
+    heartbeat_grace_period_seconds: 30
+  action_strategy: "ROLLBACK_AND_RETRY" # "ROLLBACK_AND_RETRY" | "FREEZE_FOR_ARBITRATION"
+  max_auto_retries: 2
+  retention:
+    preserve_workspace_diff: true
+    workspace_evidence_ttl_hours: 48

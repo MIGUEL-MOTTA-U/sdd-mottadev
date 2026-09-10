@@ -1,0 +1,25 @@
+apiVersion: "policy.sdd-mottadev.org/v1"
+kind: "RiskPolicy"
+metadata:
+  id: "urn:sdd:policy:risk-default"
+  version: "1.0.0"
+spec:
+  capability_weights:
+    L0: 0
+    L1: 10
+    L2: 25
+    L3: 60
+  environment_modifiers:
+    development: 0
+    staging: 20
+    production: 50
+  resource_classification:
+    - pattern: "infra/prod/**"
+      weight: 40
+    - pattern: "src/core/crypto/**"
+      weight: 30
+    - pattern: "**"
+      weight: 5
+  thresholds:
+    manual_approval_required: 70
+    rejection_ceiling: 95

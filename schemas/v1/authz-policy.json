@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sdd-mottadev.org/schemas/v1/authz-policy.json",
+  "title": "AuthorizationPolicy",
+  "type": "object",
+  "properties": {
+    "apiVersion": { "type": "string", "enum": ["policy.sdd-mottadev.org/v1"] },
+    "kind": { "type": "string", "enum": ["AuthorizationPolicy"] },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "version": { "type": "string" }
+      },
+      "required": ["id", "version"]
+    },
+    "spec": {
+      "type": "object",
+      "properties": {
+        "roles": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "permitted_capabilities": {
+                "type": "array",
+                "items": { "type": "string", "enum": ["L0", "L1", "L2", "L3"] }
+              },
+              "resource_rules": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "action": { "type": "string", "enum": ["ALLOW", "DENY"] },
+                    "patterns": { "type": "array", "items": { "type": "string" } }
+                  },
+                  "required": ["action", "patterns"]
+                }
+              }
+            },
+            "required": ["permitted_capabilities", "resource_rules"]
+          }
+        }
+      },
+      "required": ["roles"]
+    }
+  },
+  "required": ["apiVersion", "kind", "metadata", "spec"]
+}

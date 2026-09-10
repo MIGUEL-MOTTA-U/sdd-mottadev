@@ -1,0 +1,101 @@
+version: "1.0.0"
+project:
+  id: "urn:sdd:project:auth-gateway"
+  name: "Authentication Gateway Service"
+  default_rigor: 2 # 1: MVP | 2: Standard | 3: High-Criticality
+
+workspaces:
+  root: "."
+  allowed_mutations:
+    - "src/**"
+    - "tests/**"
+    - "docs/**"
+  denied_mutations:
+    - ".git/**"
+    - ".sdd/policies/**"
+    - "infra/production/**"
+
+budgets:
+  task_max_eval_attempts: 3
+  lease_default_ttl_seconds: 900
+  circuit_breaker_error_threshold: 5
+
+evaluators:
+  linter-runner:
+    command: "./scripts/evaluators/run-linter.sh"
+    timeout_seconds: 120
+  unit-test-runner:
+    command: "./scripts/evaluators/run-tests.sh"
+    timeout_seconds: 300
+  security-scanner:
+    command: "./scripts/evaluators/run-security.sh"
+    timeout_seconds: 600
+
+tracks:
+  configuration:
+    enabled: true
+    pipeline:
+      - id: "specs-config"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "linter-runner"
+      - id: "planning-config"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "linter-runner"
+      - id: "configuration"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "unit-test-runner"
+      - id: "config-testing"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "unit-test-runner"
+      - id: "config-security-analysis"
+        gate:
+          rigor: "immutable"
+          evaluator_ref: "security-scanner"
+
+  delivery:
+    pipeline:
+      - id: "discovery"
+        gate:
+          rigor: "advisory"
+      - id: "specs"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "linter-runner"
+      - id: "planning"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "linter-runner"
+      - id: "design"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "linter-runner"
+      - id: "api-contract-lint" # Fase personalizada inyectada
+        type: "custom"
+        position:
+          before: "testing"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "linter-runner"
+      - id: "testing"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "unit-test-runner"
+      - id: "implementing"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "unit-test-runner"
+      - id: "security-analysis"
+        gate:
+          rigor: "immutable"
+          evaluator_ref: "security-scanner"
+      - id: "deploying"
+        gate:
+          rigor: "strict"
+          evaluator_ref: "unit-test-runner"
+      - id: "monitoring"
+        gate:
+          rigor: "advisory"

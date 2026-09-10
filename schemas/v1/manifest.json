@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://sdd-mottadev.org/schemas/v1/manifest.json",
+  "title": "SDDManifest",
+  "description": "Definición canónica del manifiesto del proyecto SDD-mottadev",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "project": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^urn:sdd:project:[a-zA-Z0-9_-]+$"
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "default_rigor": { "type": "integer", "enum": [1, 2, 3] }
+      },
+      "required": ["id", "name", "default_rigor"],
+      "additionalProperties": false
+    },
+    "workspaces": {
+      "type": "object",
+      "properties": {
+        "root": { "type": "string", "default": "." },
+        "allowed_mutations": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Patrones glob de archivos editables por tareas L1"
+        },
+        "denied_mutations": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Patrones glob de archivos estrictamente protegidos"
+        }
+      },
+      "required": ["allowed_mutations", "denied_mutations"],
+      "additionalProperties": false
+    },
+    "budgets": {
+      "type": "object",
+      "properties": {
+        "task_max_eval_attempts": { "type": "integer", "minimum": 1, "default": 3 },
+        "lease_default_ttl_seconds": { "type": "integer", "minimum": 60, "maximum": 86400, "default": 900 },
+        "circuit_breaker_error_threshold": { "type": "integer", "minimum": 1, "default": 5 }
+      },
+      "required": ["task_max_eval_attempts", "lease_default_ttl_seconds", "circuit_breaker_error_threshold"],
+      "additionalProperties": false
+    },
+    "evaluators": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "command": { "type": "string" },
+          "timeout_seconds": { "type": "integer", "minimum": 1, "default": 300 },
+          "environment": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
+        },
+        "required": ["command"],
+        "additionalProperties": false
+      }
+    },
+    "tracks": {
+      "type": "object",
+      "properties": {
+        "configuration": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "pipeline": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/PhaseDefinition" }
+            }
+          },
+          "required": ["enabled", "pipeline"],
+          "additionalProperties": false
+        },
+        "delivery": {
+          "type": "object",
+          "properties": {
+            "pipeline": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/PhaseDefinition" }
+            }
+          },
+          "required": ["pipeline"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["configuration", "delivery"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["version", "project", "workspaces", "budgets", "evaluators", "tracks"],
+  "additionalProperties": false,
+
+  "definitions": {
+    "PhaseDefinition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["canonical", "custom"],
+          "default": "canonical"
+        },
+        "position": {
+          "type": "object",
+          "properties": {
+            "before": { "type": "string" },
+            "after": { "type": "string" }
+          },
+          "oneOf": [
+            { "required": ["before"] },
+            { "required": ["after"] }
+          ],
+          "additionalProperties": false
+        },
+        "gate": {
+          "type": "object",
+          "properties": {
+            "rigor": {
+              "type": "string",
+              "enum": ["advisory", "strict", "immutable"]
+            },
+            "evaluator_ref": { "type": "string" }
+          },
+          "required": ["rigor"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["id", "gate"],
+      "additionalProperties": false
+    }
+  }
+}
