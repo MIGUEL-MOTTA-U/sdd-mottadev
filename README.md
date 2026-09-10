@@ -265,7 +265,12 @@ PhaseContract {
 2. **Mantenimiento:** El actor debe emitir señales periódicas de `Heartbeat`.
 3. **Detección de Abandono:**
 
-$$\text{CurrentTimestamp} - \text{LastHeartbeat} > \text{LeaseTTL} \implies \text{TaskState} \leftarrow \text{FAULT}(\text{Reason: LEASE\_EXPIRED})$$
+$$
+\text{CurrentTimestamp} - \text{LastHeartbeat} > \text{LeaseTTL}
+\implies
+\text{TaskState} \leftarrow \text{FAULT}(\text{Reason: LEASE\_EXPIRED})
+$$
+
 
 
 4. **Aislamiento y Recuperación:**
