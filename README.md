@@ -1,247 +1,371 @@
-
-# Especificación Técnica del Framework SDD-mottadev
-
-## 1. Visión General y Filosofía
-
-**SDD (Spec-Driven Development / Software Development Design) - mottadev** es un framework de ciclo de vida de desarrollo de software diseñado para la colaboración fluida, auditable y determinista entre ingenieros humanos y agentes de inteligencia artificial (Claude Code, Codex, Cursor, Aider, CLI agents autónomos).
-
-### Principios Fundamentales
-
-* **No es una camisa de fuerza:** Es un sistema de reglas modular, atómico y configurable que se adapta a proyectos nuevos (*greenfield*) o existentes (*brownfield*).
-* **Seguridad Inmutable:** La seguridad es la única compuerta (*gate*) no negociable. Si una fase de análisis de seguridad falla, el avance del ciclo de vida se bloquea por completo.
-* **Agnosticismo de Modelo y Herramienta:** No depende de plataformas propietarias ni de memoria de chat. El estado se persiste en archivos locales estructurados (Markdown/YAML), aplicando divulgación progresiva de contexto (*progressive disclosure*).
-* **Trazabilidad Absoluta:** Cada cambio de código debe estar respaldado por un ítem de especificación (*Spec ID*), un ítem de plan (*Plan ID*), pruebas asociadas y un registro en la bitácora de auditoría.
-* **TDD Estricto:** La implementación siempre sigue a la definición de pruebas ejecutables. Ningún agente puede generar código funcional sin pruebas previas.
+# Especificación Formal de Arquitectura: Framework SDD-mottadev
 
 ---
 
-## 2. Arquitectura de Ciclo de Vida: Modelo de Dos Vías (Dual-Track)
+## 1. Fundamentos y Modelo Ontológico
 
-El framework opera mediante dos pipelines acoplados mediante compuertas de validación:
+El framework **SDD-mottadev** es un plano de control (*Control Plane*) determinista y agnóstico diseñado para gobernar el ciclo de vida de desarrollo de software bajo colaboración humano-agente o multi-agente. Establece un sistema formal de restricciones, transiciones de estado e interfaces verificables donde la computación generativa (probabilística) está subordinada a compuertas de evaluación e invariantes del sistema (deterministas).
+
+### Jerarquía Estructural de Entidades
+
+El metamodelo rechaza la fase o el agente como raíz. La unidad fundamental y jerárquica del sistema se modela estrictamente como:
 
 ```
-[TRACK 1: CONFIGURATION] (Requerido en inicio, onboarding o cambios de infra)
-Specs Config ──> Planning Config ──> Configuration ──> Config Testing ──> Config Security Analysis [GATE INMUTABLE]
-                                                                                  │
-                                                                                  ▼
-[TRACK 2: DELIVERY]                                                  [Entorno Operativo Listo]
-Discovery ──> Specs ──> Planning ──> Design ──> Testing (TDD) ──> Implementing ──> Security Analysis [GATE INMUTABLE] ──> Deploying ──> Monitoring
-    ▲                                                                                                                            │
-    └───────────────────────────────────── Refactor (Loopback a Discovery o Specs) ──────────────────────────────────────────────┘
+Project (Raíz del Dominio)
+  └── PolicySet (Políticas versionables que rigen el proyecto)
+  └── ChangeRequest (Unidad de intención: feature, bugfix, refactor, config)
+        └── Task (Unidad atómica y asignable de trabajo)
+              └── Execution (Instancia temporal de cómputo bajo un Lease)
+                    ├── Evidence (Registros probatorios inmutables append-only)
+                    └── Artifact (Entregables tipados con doble identidad)
 
 ```
 
-### Track 1: Configuration (Entorno, Herramientas e Infraestructura)
-
-1. **Specs Configuration:** Especificación formal de dependencias, variables de entorno, APIs, MCPs, roles IAM, permisos de agentes y baseline de infraestructura.
-2. **Planning Configuration:** Plan paso a paso para aprovisionar el MVP de configuración (endpoints base como `/health`, logging estructurado, observabilidad mínima, autenticación).
-3. **Configuration:** Ejecución del aprovisionamiento del entorno y herramientas locales/cloud.
-4. **Configuration Testing:** Pruebas de conectividad, variables, permisos y aislamiento.
-5. **Config Security Analysis [COMPUERTA INMUTABLE]:** Auditoría estricta de secretos, dependencias (CVEs) y políticas de mínimo privilegio.
-
-### Track 2: Delivery (Construcción del Producto)
-
-1. **Discovery:** Investigación de viabilidad técnica, herramientas, supuestos, regulaciones, tratamiento de datos y modelos de amenaza preliminares.
-2. **Specs:** Definición formal de requerimientos funcionales/no funcionales, alcance y criterios de aceptación.
-3. **Planning:** Desglose atómico del trabajo en `PLAN.md`. Reducción al mínimo de la toma de decisiones no consultadas.
-4. **Design:** Definición de arquitectura técnica, diagramas de secuencia, contratos de interfaz, modelos de datos, resiliencia y concurrencia.
-5. **Testing:** Definición y escritura de suites de pruebas (unitarias, integración, concurrencia o estrés según el rigor) antes de codificar la solución.
-6. **Implementing:** Codificación de la solución atada a los tests creados. Prohibido código huérfano de pruebas.
-7. **Security Analysis [COMPUERTA INMUTABLE]:** Análisis SAST/DAST, escaneo de dependencias y validación contra OWASP Top 10.
-8. **Deploying:** Despliegue con verificación automática de *healthcheck* y capacidad de rollback inmediato.
-9. **Monitoring:** Observabilidad continua (logs, métricas, trazas, KPIs de negocio) para detección temprana de incidentes.
-10. **Refactor:** Evaluación de métricas y nuevas necesidades. **Regla de retorno:** Debe volver a *Discovery* o *Specs*; queda terminantemente prohibido saltar directo a *Implementing*.
-
----
-
-## 3. Matriz de Rigurosidad por Niveles
-
-Configurable en el manifiesto global o por componente:
-
-| Nivel | Enfoque | Autonomía del Agente | Exigencia de Pruebas | Compuertas de Seguridad |
-| --- | --- | --- | --- | --- |
-| **Nivel 1 (MVP)** | Prototipos, validación rápida | Alta (el modelo asume decisiones de implementación no críticas). | Tests unitarios sobre lógica core. | Escaneo estático básico de secretos y dependencias. |
-| **Nivel 2 (Estándar)** | Producción estándar | Media (decisiones de arquitectura e infra requieren confirmación). | Tests unitarios + tests de integración. | OWASP Top 10 básico, SAST y validación de permisos en CI/CD. |
-| **Nivel 3 (Avanzado)** | Sistemas críticos, alta concurrencia | Baja (toda decisión de datos, seguridad y concurrencia se aprueba). | Unitarios, integración, concurrencia, estrés y casos de borde. | Threat modeling formal, SAST/DAST exhaustivo, cero CVEs altos/críticos. |
-
----
-
-## 4. Estructura del Repositorio (`.sdd/`)
-
-Todos los artefactos de control del framework residen en el directorio `.sdd/` en la raíz del repositorio:
-
-```text
-.sdd/
-├── sdd.config.yaml              # Manifiesto principal del pipeline y reglas
-├── STATE.md                     # Snapshot caliente (<30 líneas). Lo primero que lee el agente
-├── PLAN.md                      # Checklist atómico de la fase activa
-├── CHANGELOG.md                 # Bitácora append-only de sesiones y auditoría
-├── DECISIONS.md                 # Architecture Decision Records (ADRs) ligeros
-├── rules/                       # Reglas modulares inyectadas progresivamente
-│   ├── core/
-│   │   ├── security-inmutable.md
-│   │   ├── tdd-enforcement.md
-│   │   └── traceability.md
-│   └── custom/                  # Reglas específicas del proyecto
-│       └── api-contracts.md
-└── scripts/                     # Validadores deterministas ejecutables
-    ├── sdd                      # CLI agnóstico en POSIX shell o binario compilado
-    ├── gate-runner.sh           # Orquestador de compuertas
-    └── sec-scan.sh              # Evaluador de seguridad (SAST, secretos, CVEs)
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                               Project                                  │
+│  ┌───────────────────────┐                  ┌───────────────────────┐  │
+│  │       PolicySet       │                  │     ChangeRequest     │  │
+│  └───────────────────────┘                  └───────────┬───────────┘  │
+│                                                         │              │
+│                                             ┌───────────▼───────────┐  │
+│                                             │         Task          │  │
+│                                             └───────────┬───────────┘  │
+│                                                         │              │
+│                                             ┌───────────▼───────────┐  │
+│                                             │       Execution       │  │
+│                                             └─────┬───────────┬─────┘  │
+│                                                   │           │        │
+│                                     ┌─────────────▼───┐   ┌───▼──────┐ │
+│                                     │    Evidence     │   │ Artifact │ │
+│                                     └─────────────────┘   └──────────┘ │
+└────────────────────────────────────────────────────────────────────────┘
 
 ```
 
 ---
 
-## 5. Especificaciones de Archivos y Contratos
+## 2. Modelo de Identidad, Capacidades y Seguridad
 
-### A. Manifiesto Principal: `.sdd/sdd.config.yaml`
+### 2.1 Identidad de Actores (`Actor`)
 
-Permite extender el pipeline inyectando fases personalizadas mediante un arreglo secuencial con soporte para compuertas.
+Cualquier entidad que interactúe con el framework (humano, agente autónomo, pipeline o script) es un `Actor` abstracto:
 
-```yaml
-version: "1.0"
-framework: "sdd-mottadev"
-settings:
-  rigor_level: 2 # 1: MVP | 2: Standard | 3: Advanced
-  auto_commit_on_gate: true
+* `actor_id`: Identificador canónico (`urn:sdd:actor:<namespace>:<id>`).
+* `public_key`: Clave criptográfica para firma de artefactos, evidencias y tokens.
+* `role`: Rol de ejecución asignado (`planner`, `implementer`, `evaluator`, `auditor`, `operator`).
 
-tracks:
-  configuration:
-    enabled: true
-    pipeline:
-      - id: "specs-config"
-        gate: "strict"
-      - id: "planning-config"
-        gate: "strict"
-      - id: "configuration"
-        gate: "strict"
-      - id: "config-testing"
-        gate: "strict"
-      - id: "config-security-analysis"
-        gate: "immutable" # No bypassable
+### 2.2 Niveles de Capacidad (*Privilege Levels*)
 
-  delivery:
-    pipeline:
-      - id: "discovery"
-        gate: "advisory"
-      - id: "specs"
-        gate: "strict"
-      - id: "planning"
-        gate: "strict"
-      - id: "design"
-        gate: "strict"
-      # Extensión personalizada de ejemplo:
-      - id: "contract-validation"
-        type: "custom"
-        position:
-          before: "testing"
-        gate: "strict"
-        rules: ["rules/custom/api-contracts.md"]
-        evaluator: "scripts/validate-contracts.sh"
-      - id: "testing"
-        gate: "strict"
-        rules: ["rules/core/tdd-enforcement.md"]
-      - id: "implementing"
-        gate: "strict"
-        rules: ["rules/core/traceability.md"]
-      - id: "security-analysis"
-        gate: "immutable"
-        evaluator: "scripts/sec-scan.sh"
-      - id: "deploying"
-        gate: "strict"
-      - id: "monitoring"
-        gate: "advisory"
+Las capacidades definen el alcance operativo del comando o herramienta, desvinculadas de la criticidad del entorno:
 
-gates:
-  block_on_security_violation: true
-  allow_manual_override_on_security: false
+* **L0 (Read-Only):** Inspección de estado, lectura de especificaciones y análisis estático pasivo sin alteración de disco ni memoria persistente.
+* **L1 (Scoped Workspace Mutation):** Escritura y mutación de archivos restringida exclusivamente al espacio de trabajo asignado a la tarea (`TaskWorkspace`).
+* **L2 (Sandbox Execution):** Ejecución de procesos efímeros (compilación, linters, suites de pruebas) dentro de entornos confinados, sin acceso a redes externas ni persistencia fuera del workspace.
+* **L3 (Privileged / External Mutation):** Alteración de infraestructura, despliegues, operaciones destructivas sobre datos o invocación de servicios externos sensibles.
+
+### 2.3 Cálculo de Riesgo Contextual
+
+El riesgo es una propiedad emergente calculada por el runtime antes de autorizar cualquier operación:
+
+
+$$\text{RiskScore} = f(\text{Capability}, \text{ResourceImpact}, \text{EnvironmentCriticality})$$
+
+* Si $\text{RiskScore} \ge \text{RiskThreshold}$: La operación no puede ejecutarse de manera desatendida y exige un `ApprovalToken`.
+
+### 2.4 Token de Aprobación Criptográfica (`ApprovalToken`)
+
+Autorización atómica, de un solo uso y vinculada a un contexto exacto para operaciones L3:
+
+```
+ApprovalToken {
+    token_id: UUIDv4
+    issuer: ActorId (Autoridad humana u operador autorizado)
+    subject_task: TaskId
+    permitted_capability: "L3"
+    target_resource: ResourceURI
+    expected_artifact_hash: SHA-256
+    valid_from: Timestamp ISO-8601 UTC
+    expires_at: Timestamp ISO-8601 UTC (TTL estricto)
+    nonce: CryptographicNonce
+    signature: DigitalSignature
+}
 
 ```
 
-### B. Snapshot Caliente: `.sdd/STATE.md`
+### 2.5 Protocolo de Excepción Crítica (*Break-Glass*)
 
-Este archivo debe mantenerse pequeño (< 30 líneas). Contiene la verdad activa que cualquier agente lee al arrancar.
+Mecanismo para omitir compuertas inmutables ante incidentes de producción o recuperación de desastres:
 
-```markdown
-# SDD Runtime State
-- **Active Track**: delivery
-- **Current Phase**: testing
-- **Rigorous Level**: 2
-- **Agent/Model**: Claude Code (Session-104)
-- **Status**: IN_PROGRESS
-- **Active Task**: P-004
-- **Gate Status**: PENDING_VERIFICATION
-- **Last Updated**: 2026-09-08T11:20:00Z
+1. Requiere la emisión de un `EmergencyOverrideToken` firmado mediante esquema multi-firma (mínimo dos actores autorizados).
+2. Desactiva condicionalmente la compuerta por un período no prorrogable ($\text{TTL} \le 120 \text{ minutos}$).
+3. Genera automáticamente un `ChangeRequest` de tipo `POST_MORTEM_REMEDIATION` en estado `BLOCKED` asignado al equipo de seguridad.
+4. Emite un evento de auditoría no repudiable y de difusión global.
+
+---
+
+## 3. Sistema de Políticas y Evaluación de Compuertas (*Gates*)
+
+### 3.1 `Policy` como Entidad de Primer Orden
+
+Las políticas son artefactos inmutables, versionables y evaluables que configuran el comportamiento del plano de control:
+
+* **`GatePolicy`:** Reglas de paso, condiciones de prueba y tolerancias por fase.
+* **`AuthorizationPolicy`:** Asignación entre roles de `Actor`, niveles de capacidad (L0–L3) y recursos.
+* **`RiskPolicy`:** Matrices de criticidad y umbrales para requerir `ApprovalToken`.
+* **`OrphanPolicy`:** Estrategias de recuperación ante expiración de leases de agentes.
+* **`MergePolicy`:** Criterios de integración concurrente al tronco principal.
+
+Toda modificación a una política requiere tramitarse formalmente a través de un `ChangeRequest`.
+
+### 3.2 Semántica de Evaluación de Gates
+
+Un Gate es una función booleana pura ejecutada sobre las evidencias generadas:
+
+
+$$\text{GateResult} \in \{\text{PASS}, \text{FAIL}, \text{ERROR}\}$$
+
+* **`PASS`:** La totalidad de las aserciones obligatorias (`strict` e `immutable`) se evalúan como verdaderas.
+* **`FAIL`:** Una o más aserciones evaluadas son falsas (vulnerabilidad detectada, prueba unitaria fallida, contrato roto).
+* **`ERROR`:** Falla de infraestructura en el evaluador (timeout, script caído, servicio inaccesible). **Bajo ninguna circunstancia un `ERROR` equivale a un `PASS**`; la transición se detiene en estado de falla operacional.
+
+### 3.3 Aceptación Formal de Riesgo (`RiskAcceptance`)
+
+El framework rechaza los estados de "Pass condicional". Si una compuerta genera `FAIL`, la transición solo puede desbloquearse mediante una entidad formal `RiskAcceptance`:
+
+```
+RiskAcceptance {
+    acceptance_id: UUIDv4
+    policy_id: PolicyId
+    failing_assertion: String
+    justification: String
+    compensating_controls: List<String>
+    owner: ActorId
+    expires_at: Timestamp ISO-8601 UTC
+    signature: DigitalSignature
+}
 
 ```
 
-### C. Plan Atómico: `.sdd/PLAN.md`
+### 3.4 Separación entre Productor y Evaluador (*Separation of Concerns*)
 
-Desglosa tareas bajo el principio de responsabilidad única (SRP):
+**Invariante Axiomático:** El actor (`Actor`) que genera un artefacto (`Producer`) tiene prohibido actuar como evaluador (`Evaluator`) del mismo en compuertas catalogadas como `strict` o `immutable`. La evaluación debe ser ejecutada por herramientas deterministas o por un actor independiente con rol de auditoría.
 
-```markdown
-# Implementation Plan - Phase: Testing & Implementing
+---
 
-- [x] **P-001**: Definir interfaz de autenticación JWT [Spec: S-02] (Tests requeridos: Unit).
-- [ ] **P-002**: Implementar suite de pruebas unitarias para validación de tokens [Spec: S-02] (Status: IN_PROGRESS).
-- [ ] **P-003**: Implementar middleware de autenticación [Spec: S-02] (Status: TODO).
+## 4. Ciclo de Vida Dual-Track y Fases del Framework
+
+El sistema desacopla la preparación del entorno de la materialización de software mediante dos vías interconectadas:
+
+```
+[TRACK 1: CONFIGURATION]
+Specs Config ──> Planning Config ──> Configuration ──> Config Testing ──> Config Security [GATE INMUTABLE]
+                                                                                │
+                                                                                ▼
+[TRACK 2: DELIVERY]                                                    [Ambiente Certificado]
+Discovery ──> Specs ──> Planning ──> Design ──> Testing ──> Implementing ──> Security [GATE INMUTABLE] ──> Deploying ──> Monitoring
 
 ```
 
-### D. Definición de Reglas Modulares (`.sdd/rules/core/*.md`)
+### 4.1 Contrato Estándar de Fase (*Phase Contract*)
 
-Cada regla utiliza frontmatter YAML estructurado para guiar a los agentes y referenciar el evaluador determinista:
+Toda fase (canónica o personalizada) se rige por la interfaz:
 
-```markdown
+```
+PhaseContract {
+    id: KebabCaseIdentifier
+    track: "configuration" | "delivery"
+    required_inputs: Set<LogicalArtifactId>
+    invariants: Set<PolicyId>
+    required_outputs: Set<LogicalArtifactId>
+    gate: {
+        rigor: "advisory" | "strict" | "immutable"
+        evaluator_ref: EvaluatorURI
+    }
+    hooks: {
+        before: List<PhaseContract>
+        after: List<PhaseContract>
+    }
+}
+
+```
+
+### 4.2 Fases del Track de Configuración (Infraestructura, Herramientas y Accesos)
+
+1. **Specs Configuration:** Especificación de dependencias, variables, APIs, interfaces MCP, roles y permisos requeridos.
+2. **Planning Configuration:** Plan para aprovisionar el MVP de configuración operativa (health checks basales, logging, autenticación mínima).
+3. **Configuration:** Aprovisionamiento físico o virtual del entorno de desarrollo/ejecución.
+4. **Config Testing:** Validación funcional de conectores, variables de entorno, pipelines y aislamiento de red.
+5. **Config Security Analysis [COMPUERTA INMUTABLE]:** Auditoría estricta de superficies de ataque, permisos IAM, detección de secretos y análisis de CVEs en dependencias base.
+
+### 4.3 Fases del Track de Delivery (Construcción de Solución)
+
+1. **Discovery:** Investigación de viabilidad técnica, benchmarking, evaluación de dependencias y modelos de amenaza preliminares.
+2. **Specs:** Formalización de requerimientos funcionales, no funcionales y criterios de aceptación.
+3. **Planning:** Desglose del alcance en unidades de trabajo atómicas (`Task`), mitigando ambigüedades.
+4. **Design:** Definición de arquitectura, diagramas de interacción, contratos de interfaz, resiliencia y modelo de datos.
+5. **Testing:** Materialización de suites de pruebas ejecutables que codifican los contratos antes de la implementación funcional.
+6. **Implementing:** Construcción del código que satisface las suites de pruebas definidas, vinculando cada cambio al identificador de tarea correspondiente.
+7. **Security Analysis [COMPUERTA INMUTABLE]:** Análisis SAST/DAST, verificación estricta de OWASP y escaneo de vulnerabilidades sobre los artefactos producidos.
+8. **Deploying:** Despliegue hacia el entorno objetivo con verificación de salud operativa y capacidad de rollback atómico.
+9. **Monitoring:** Observabilidad continua (métricas, trazas, logs de auditoría) para detección temprana de degradación o brechas.
+
 ---
-id: "RULE-SEC-01"
-name: "Immutable Security Gate"
-severity: "FATAL"
-evaluator: "scripts/sec-scan.sh"
-applies_to: ["config-security-analysis", "security-analysis"]
+
+## 5. Máquina de Estados de Tarea y Concurrencia
+
+### 5.1 Estados Formales de la Tarea (`TaskState`)
+
+```
+       ┌──────────────┐
+       │  UNASSIGNED  │
+       └──────┬───────┘
+              │ Lease otorgado (Actor + TTL)
+              ▼
+       ┌──────────────┐      Falla Operacional (Timeout / Crash)
+       │    ACTIVE    ├─────────────────────────────┐
+       └──────┬───────┘                             │
+              │ Ejecución finalizada                │
+              ▼                                     ▼
+       ┌──────────────┐                      ┌─────────────┐
+       │  GATE_EVAL   │                      │    FAULT    │
+       └──────┬───────┘                      └──────┬──────┘
+              │                                     │
+      ┌───────┴───────────────┐                     │
+      │ PASS                  │ FAIL                │
+      ▼                       ▼                     │
+┌───────────┐           ┌───────────┐               │
+│ COMPLETED │           │  FAILED   │               │
+└───────────┘           └─────┬─────┘               │
+                              │ Requiere aprobación │
+                              ▼                     │
+                        ┌───────────┐               │
+                        │  BLOCKED  │ <─────────────┘
+                        └─────┬─────┘
+                              │
+                              ▼
+                        ┌───────────┐
+                        │ CANCELLED │
+                        └───────────┘
+
+```
+
+* **`UNASSIGNED`:** Tarea creada en el plan global sin ejecutor asignado.
+* **`ACTIVE`:** Arriendo (*lease*) tomado por un `Actor` con un `Heartbeat` vigente.
+* **`GATE_EVAL`:** Cómputo concluido; compuertas en ejecución y evaluación determinista.
+* **`COMPLETED`:** 100% de compuertas aprobadas; artefactos y evidencias sellados.
+* **`FAILED`:** Rechazo determinista de compuertas (pruebas fallidas, vulnerabilidad detectada). Exige re-trabajo técnico del ejecutor.
+* **`FAULT`:** Error operacional del sistema (expiración de lease, timeout de ejecución, caída del runtime).
+* **`BLOCKED`:** Ejecución suspendida en espera de una acción externa (emisión de `ApprovalToken`, resolución de dependencia o arbitraje humano).
+* **`CANCELLED`:** Estado terminal forzado por el operador o por revocación de la tarea padre.
+
+### 5.2 Protocolo de Arriendo (*Lease*) y Recuperación de Huérfanos
+
+1. **Adquisición:** Un `Actor` reclama una tarea pasando su estado a `ACTIVE` fijando un $\text{LeaseTTL}$.
+2. **Mantenimiento:** El actor debe emitir señales periódicas de `Heartbeat`.
+3. **Detección de Abandono:**
+
+$$\text{CurrentTimestamp} - \text{LastHeartbeat} > \text{LeaseTTL} \implies \text{TaskState} \leftarrow \text{FAULT}(\text{Reason: LEASE\_EXPIRED})$$
+
+
+4. **Aislamiento y Recuperación:**
+* El workspace efímero del actor desconectado se congela de inmediato.
+* Se extrae el árbol de diferencias (*diff*) como `Evidence` de auditoría.
+* Según la `OrphanPolicy`: se realiza un `ROLLBACK` atómico liberando la tarea a `UNASSIGNED`, o se escala a `BLOCKED` para arbitraje manual.
+
+
+
+### 5.3 Reconciliación Concurrente e Integración
+
+* **Aislamiento:** Cada tarea en estado `ACTIVE` opera en un espacio de trabajo desacoplado (rama git efímera o contenedor aislado).
+* **`IntegrationRequest`:** Solicitud formal emitida al completar una tarea para fusionar los cambios al tronco común.
+* **`MergeEvaluator`:** Validador que simula la integración en un entorno efímero y re-ejecuta las compuertas sobre el artefacto unificado.
+* **`MergePolicy`:**
+* *Linear Strict:* Exige que la rama esté rebasada sobre el último commit del tronco antes de evaluar compuertas.
+* *Arbitrated:* En caso de conflicto semántico o de contenido, transiciona a `BLOCKED` requiriendo resolución humana.
+
+
+
 ---
 
-# Regla Innegociable de Seguridad
+## 6. Modelo de Artefactos, Evidencia y Linaje
 
-1. No se permiten credenciales, API keys o tokens en texto plano dentro del código o documentación.
-2. Todas las dependencias deben estar libres de vulnerabilidades con severidad HIGH o CRITICAL.
-3. Si el script `sec-scan.sh` retorna código de salida != 0, la tarea se marca inmediatamente como BLOCKED.
+### 6.1 Separación de Identidad de Artefactos
+
+Para evitar colisiones entre la función de un archivo y su estado temporal, todo artefacto implementa doble identidad:
+
+* **Identidad Lógica (`LogicalId`):** Inmutable en el tiempo; define el rol del recurso (`urn:sdd:artifact:specs/auth-service`).
+* **Identidad de Contenido (`ContentHash`):** Criptográficamente unívoca para cada versión del archivo ($\text{SHA-256}$).
+
+```
+ArtifactReference {
+    logical_id: LogicalId
+    content_hash: SHA256Hash
+    parent_hashes: List<SHA256Hash>       # Linaje formal (DAG)
+    derived_from_task: TaskId
+    schema_version: SemanticVersion
+    producer_signature: DigitalSignature
+}
+
+```
+
+### 6.2 Evidencia Probatoria Inmutable (`Evidence`)
+
+La evidencia es un registro inmutable generado por un `Evaluator` que demuestra objetivamente el cumplimiento o incumplimiento de una regla o compuerta:
+
+* La evidencia **nunca** es creada por el productor del código.
+* Es de naturaleza estrictamente *append-only*.
+* Estructura:
+
+```
+EvidenceRecord {
+    evidence_id: UUIDv4
+    task_id: TaskId
+    evaluator_id: ActorId
+    evaluated_artifact_hash: SHA256Hash
+    assertion_results: Map<String, Boolean>
+    raw_output_ref: ContentURI
+    exit_code: Integer
+    timestamp: Timestamp ISO-8601 UTC
+    evaluator_signature: DigitalSignature
+}
 
 ```
 
 ---
 
-## 6. Especificación de Herramientas y CLI (`sdd`)
+## 7. Protocolo de Contexto y Abstracción de Almacenamiento
 
-El framework cuenta con un CLI ejecutable (implementable en Shell POSIX o Go) que expone los siguientes comandos para ser invocados por scripts, agentes o hooks de Git:
+### 7.1 Esquema Abstracto de Direccionamiento
 
-* `sdd status`: Imprime el contenido de `.sdd/STATE.md` y valida la integridad de la sesión.
-* `sdd plan [--add|--update|--close]`: Manipula atómicamente `.sdd/PLAN.md`.
-* `sdd check-gate`: Ejecuta el script evaluador configurado para la fase actual. Devuelve `exit 0` si aprueba, o `exit 1` con reporte de fallas.
-* `sdd next-phase`: Verifica que la compuerta esté en estado superado (`exit 0`), registra el cambio en `.sdd/CHANGELOG.md` y avanza el cursor de fase en `.sdd/STATE.md`.
-* `sdd log --session`: Permite agregar una entrada estructurada al final de `.sdd/CHANGELOG.md`.
+El núcleo del framework es independiente de sistemas de archivos locales, APIs en la nube o bases de datos relacionales. Toda entidad se referencia mediante el protocolo abstracto `sdd://`:
 
-### Integraciones Recomendadas
+$$\text{sdd://}\langle \text{project-id} \rangle / \langle \text{domain} \rangle / \langle \text{entity-type} \rangle / \langle \text{entity-id} \rangle$$
 
-* **Escaneo de Secretos:** Gitleaks o Trufflehog integrados en `scripts/sec-scan.sh`.
-* **Análisis Estático (SAST):** Semgrep (OSS) ejecutando reglas OWASP Top 10.
-* **Escaneo de Dependencias:** Trivy u OSV-Scanner.
-* **Model Context Protocol (MCP):** Un servidor local `sdd-mcp-server` que exponga estas acciones como herramientas directas (`tools`) para agentes que soportan MCP.
+### 7.2 Capa de Adaptadores de Almacenamiento (*Storage Adapters*)
+
+El runtime materializa el protocolo abstracto a través de adaptadores especializados según el entorno de ejecución:
+
+| Adaptador | Dominio de Uso | Mecanismo de Persistencia |
+| --- | --- | --- |
+| **Filesystem Adapter** | Desarrollo local y agentes CLI | Mapeo determinista en directorio `.sdd/` del repositorio. |
+| **Git Object Adapter** | Trazabilidad distribuida | Almacenamiento de artefactos y evidencias como blobs y tags de Git. |
+| **Blob Storage Adapter** | CI/CD y nubes públicas | Persistencia inmutable en buckets S3/GCS compatibles. |
+
+### 7.3 Divulgación Progresiva de Contexto (*Progressive Disclosure*)
+
+Para evitar la degradación del razonamiento de modelos y agentes por saturación de contexto:
+
+1. **Filtro de Entrada:** Un actor solo recibe los esquemas y contratos de las fases activas y los `ArtifactReference` listados como `required_inputs` en el `PhaseContract`.
+2. **Aislamiento de Documentación Pesada:** Las investigaciones extensas, logs de compilación masivos o volcados de datos permanecen en el subsistema de almacenamiento. Al actor únicamente se le inyectan payloads de resumen estructurado (`Summary`, `EvidenceList`, `ConfidenceScore`).
+3. **Inyección Dinámica de Políticas:** Las políticas se suministran bajo demanda únicamente cuando la tarea activa entra en contacto con el recurso o capacidad correspondiente.
 
 ---
 
-## 7. Protocolo de Ejecución para Agentes de IA
+## 8. Verificación de Integridad y Trazabilidad
 
-Cada agente que interactúe con el repositorio debe seguir este algoritmo:
+Todo cambio aplicado al sistema debe verificar la cadena de custodia completa:
 
-1. **Fase 0 (Sincronización):** Leer `.sdd/STATE.md`. Determinar el *track* activo, la *fase* actual y el nivel de rigor.
-2. **Fase 1 (Carga de Contexto Mínimo):** Cargar únicamente las reglas especificadas en `.sdd/sdd.config.yaml` para la fase activa.
-3. **Fase 2 (Planificación):** Si la fase actual requiere tareas, leer `.sdd/PLAN.md` y tomar el ítem de trabajo correspondiente.
-4. **Fase 3 (Ejecución y Verificación):** Modificar el código o pruebas. Ejecutar suites locales.
-5. **Fase 4 (Validación de Compuerta):** Correr `.sdd/scripts/sdd check-gate`.
-* Si retorna error (`exit != 0`): Corregir la falla. No intentar avanzar.
-* Si aprueba (`exit 0`): Ejecutar `sdd next-phase`.
+$$\text{Project} \longleftarrow \text{ChangeRequest} \longleftarrow \text{Task} \longleftarrow \text{Execution} \longleftarrow \text{Evidence} \Longrightarrow \text{Artifact}$$
 
-
-6. **Fase 5 (Handoff y Cierre):** Registrar la entrada de auditoría en `.sdd/CHANGELOG.md`, marcar el estado como `FREE` en `.sdd/STATE.md` y generar el commit convencional vinculando el ID de tarea (`[PLAN:P-XXX]`).
+El estado global del proyecto en cualquier instante de tiempo $T$ es matemáticamente reproducible a partir del historial secuencial de evidencias selladas, firmas criptográficas y árboles de dependencias de artefactos, garantizando auditabilidad absoluta e independencia frente al ejecutor subyacente.
