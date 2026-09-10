@@ -21,6 +21,9 @@ Toda la metadata, políticas, tareas, evidencias y estado de ejecución residen 
 │   ├── changes/                         # sdd://<project>/changes/<change_id>
 │   │   └── CR-001/
 │   │       ├── CR.md                    # Metadatos del ChangeRequest
+│   │       ├── design/                  # sdd://<project>/changes/<change_id>/design
+│   │       │   ├── mocks/               # Mocks, imágenes, capturas y muestras visuales
+│   │       │   └── UI-SPEC.md           # Especificación de vistas y contratos de UI
 │   │       ├── tasks/                   # sdd://<project>/tasks/<task_id>
 │   │       │   ├── PLAN-001.md
 │   │       │   └── PLAN-002.md
@@ -48,6 +51,7 @@ Toda la metadata, políticas, tareas, evidencias y estado de ejecución residen 
 | `sdd://project/manifest` | `.sdd/sdd.manifest.yaml` | Versionado en Git | Configuración declarativa del plano de control |
 | `sdd://project/policy/<id>` | `.sdd/policies/<id>.yaml` | Versionado en Git | Políticas activas e inmutables del proyecto |
 | `sdd://project/change/<id>` | `.sdd/changes/<id>/CR.md` | Versionado en Git | Unidad de intención de cambio y contexto |
+| `sdd://project/change/<id>/design/<path>` | `.sdd/changes/<id>/design/<path>` | Versionado en Git | Mocks, imágenes, wireframes y contratos de UI |
 | `sdd://project/task/<id>` | `.sdd/changes/<cr_id>/tasks/<id>.md` | Versionado en Git | Unidad atómica asignable de trabajo |
 | `sdd://project/artifact/logical/<path>` | `<path>` (Ruta real en repo, ej: `src/auth.ts`) | Versionado en Git | Código fuente, configuración y documentación |
 | `sdd://project/artifact/blob/<hash>` | `.sdd/artifacts/blobs/<hash[:2]>/<hash[2:]>` | Append-only / CAS | Almacén de contenido inmutable direccionable |

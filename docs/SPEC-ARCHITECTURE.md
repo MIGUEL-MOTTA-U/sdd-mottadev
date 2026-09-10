@@ -194,10 +194,14 @@ PhaseContract {
 
 1. **Discovery:** Investigación de viabilidad técnica, benchmarking, evaluación de dependencias y modelos de amenaza preliminares.
 2. **Specs:** Formalización de requerimientos funcionales, no funcionales y criterios de aceptación.
-3. **Planning:** Desglose del alcance en unidades de trabajo atómicas (`Task`), mitigando ambigüedades.
-4. **Design:** Definición de arquitectura, diagramas de interacción, contratos de interfaz, resiliencia y modelo de datos.
+   * **Invariante de Cero Asunciones:** Queda prohibido asumir o inferir entregables. Toda vista, producto, alcance de MVP y entregable debe estar explícitamente definido y ordenado por el usuario.
+   * **Estructuración Eficiente de Vistas y MVP:** Las vistas de la solución y los límites del producto MVP deben modelarse contractualmente en esta fase.
+3. **Planning:** Desglose del alcance en unidades de trabajo atómicas (`Task`), mitigando ambigüedades y vinculando cada tarea a entregables autorizados.
+4. **Design:** Definición de arquitectura técnica, diagramas de interacción, contratos de interfaz, resiliencia y modelo de datos.
+   * **Compuerta Ineludible de Frontend (Gate Estricto):** Si el cambio involucra interfaz gráfica o frontend, la fase de diseño es estrictamente obligatoria antes de implementar ("sin un diseño no se avanza").
+   * **Artefactos Visuales de Diseño:** Es requisito generar y persistir en `sdd://project/change/<id>/design/` los mocks, imágenes, wireframes, muestras visuales de lo esperado y contratos de vistas. La transición a `Testing` o `Implementing` queda bloqueada si no existe diseño sellado y validado por el usuario.
 5. **Testing:** Materialización de suites de pruebas ejecutables que codifican los contratos antes de la implementación funcional.
-6. **Implementing:** Construcción del código que satisface las suites de pruebas definidas, vinculando cada cambio al identificador de tarea correspondiente.
+6. **Implementing:** Construcción del código que satisface las suites de pruebas y el diseño aprobado, vinculando cada cambio al identificador de tarea correspondiente.
 7. **Security Analysis [COMPUERTA INMUTABLE]:** Análisis SAST/DAST, verificación estricta de OWASP y escaneo de vulnerabilidades sobre los artefactos producidos.
 8. **Deploying:** Despliegue hacia el entorno objetivo con verificación de salud operativa y capacidad de rollback atómico.
 9. **Monitoring:** Observabilidad continua (métricas, trazas, logs de auditoría) para detección temprana de degradación o brechas.
