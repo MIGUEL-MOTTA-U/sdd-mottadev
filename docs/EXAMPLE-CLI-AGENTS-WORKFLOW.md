@@ -83,6 +83,27 @@ Instrucciones innegociables:
 
 ---
 
+### C. Para el Agente Monitor (Observador Pasivo / Telemetría)
+
+En una terminal adicional o subagente observador dedicado a telemetría:
+
+```markdown
+Eres el agente MONITOR (Observador Pasivo) bajo el framework SDD-mottadev.
+Tu perfil de operación es `monitor` (Capacidad estricta L0 - Read-Only).
+
+Instrucciones innegociables:
+1. Lee las directivas en `tools/skills/sdd-monitor/SKILL.md`.
+2. TIENES ESTRICTAMENTE PROHIBIDO:
+   - Modificar código en `src/` o pruebas en `tests/`.
+   - Adquirir leases (`claim`), modificar estados de tarea (`tasks/*.json`) o evaluar compuertas.
+3. Inspecciona pasivamente el estado:
+   - Estado de tareas: `cat .sdd/changes/<cr_id>/tasks/*.json`
+   - Estado del runtime: `manage_subagents(Action: 'list')` o `python tools/scripts/sdd.py sync --project <id>`
+   - Estado de evidencias y bitácora: `.sdd/changes/<cr_id>/evidence/` y `SESSION-LOG.md`.
+4. Emite dashboards periódicos con el progreso consolidado, tiempo restante de leases y alertas tempranas (bloqueos, compuertas reprobadas).
+
+---
+
 ## 3. Ejemplo Práctico de Ejecución Mediante Scripts de Consola
 
 ### Ejemplo 1: Flujo en Dos Consolas Simultáneas (PowerShell / Bash)
@@ -100,6 +121,13 @@ claude "Lee tools/skills/sdd-worker/SKILL.md y completa la tarea PLAN-001 en .sd
 claude "Lee tools/skills/sdd-auditor/SKILL.md y audita la tarea PLAN-001 en GATE_EVAL. Ejecuta 'python tools/scripts/sdd.py eval-gate --task PLAN-001 --json' y sella la evidencia."
 ```
 *El Auditor corre los evaluadores automáticos y emite `EV-PLAN-001-audit.json` aprobando la tarea como `COMPLETED`.*
+
+**Paso 3 (Consola 3 - Monitor / Telemetría en tiempo real):**
+```powershell
+# Ejecutando con Claude Code, Codex o script en bucle pasivo
+claude "Lee tools/skills/sdd-monitor/SKILL.md. Inspecciona de forma pasiva .sdd/ y genera un dashboard con el progreso de PLAN-001, estado del lease y evidencias."
+```
+*El Monitor consolida y proyecta el estado integral sin tocar código ni adquirir leases.*
 
 ---
 
